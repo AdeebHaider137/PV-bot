@@ -3,18 +3,19 @@
 A Telegram bot project for managing tasks, providing updates, and automating workflows.
 
 Here is the link to see the Demo
-🐾🐾🐾 https://youtu.be/P3QyeaPyGYE
+🐾🐾🐾 https://youtu.be/P3QyeaPyGYE 
 
 
 ## Features
 - Manage tasks (add, list, stats).
 - Daily updates and feedback collection.
 - Leave request handling.
+- ready to integrate with task scheduler API
 
 ## Setup Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/PV-bot.git
+   git clone https://github.com/AdeebHaider137/PV-bot.git
    cd PV-bot
 Search on telegram
 \n Username - @itsPvbot
