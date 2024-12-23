@@ -15,7 +15,7 @@ from commands.listtask import list_task
 from commands.stats import stats
 from commands.feedback import feedback
 
-my_secret = os.environ['BOT_TOKEN']
+my_secret = os.environ['BOT_TOKEN'].strip()
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
