@@ -1,7 +1,5 @@
 import os
 import logging
-import asyncio
-
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler
@@ -12,7 +10,6 @@ from commands.add_task import add_task
 from commands.listtask import list_task
 from commands.stats import stats
 from commands.feedback import feedback
-from commands.help_command import help_command  # Import renamed help handler
 
 # Set up logging
 logging.basicConfig(
@@ -35,7 +32,7 @@ application = Application.builder().token(my_secret).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("dailyupdate", daily_update))
 application.add_handler(CommandHandler("leave", leave))
-application.add_handler(CommandHandler("help", help_command))  # Use renamed help handler
+application.add_handler(CommandHandler("help", help_command))
 application.add_handler(CommandHandler("addtask", add_task))
 application.add_handler(CommandHandler("listtask", list_task))
 application.add_handler(CommandHandler("stats", stats))
@@ -43,19 +40,19 @@ application.add_handler(CommandHandler("feedback", feedback))
 
 # Set up webhook route
 @app.route(f"/{my_secret}", methods=["POST"])
-def webhook():
+async def webhook():
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
-        asyncio.run(application.process_update(update))  # Use asyncio.run for async processing
+        await application.process_update(update)  # Use await for async processing
         return "OK", 200
     except Exception as e:
-        logging.exception("Error processing update:")  # Improved error logging
+        logging.error(f"Error processing update: {e}")
         return "Internal Server Error", 500
 
 def main() -> None:
-    """Start the bot using webhooks."""
+    """Starting the bot using Webhooks."""
     logging.info("Setting up webhook...")
-    asyncio.run(application.bot.set_webhook(url=f"https://pv-bot-production.up.railway.app/{my_secret}"))
+    application.bot.set_webhook(url=f"https://pv-bot-production.up.railway.app/{my_secret}")
 
     # Run Flask app
     port = int(os.getenv("PORT", 8443))
