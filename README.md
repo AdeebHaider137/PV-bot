@@ -1,3 +1,12 @@
+## ⚠️ Notification
+
+**Important:**  
+The repository currently contains incorrect or outdated code. However, the bot is still functional because it is running on a previously successful deployment.  
+
+You can verify the bot's functionality by checking the live deployment.  
+
+🚀 **[Check the bot in action](https://t.me/itsPvbot)**  
+
 # PV-Bot
 
 A Telegram bot project for managing tasks, providing updates, and automating workflows.

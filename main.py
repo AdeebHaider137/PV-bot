@@ -1,63 +1,60 @@
-import os
+from flask import Flask
+from threading import Thread
 import logging
-from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler
-from commands.start import start
-from commands.daily_update import daily_update
-from commands.leave import leave
+import os
+from telegram.ext import ApplicationBuilder, CommandHandler
+
+# Import your command handlers
 from commands.add_task import add_task
-from commands.listtask import list_task
-from commands.stats import stats
+from commands.daily_update import daily_update
 from commands.feedback import feedback
+from commands.help_command import help_command
+from commands.leave import leave
+from commands.listtask import list_task
+from commands.start import start
+from commands.stats import stats
 
-# Set up logging
+# Configure logging
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO)
-logger = logging.getLogger(__name__)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-#environment variables
-my_secret = os.getenv("BOT_TOKEN", "").strip()
-if not my_secret:
-    raise EnvironmentError("Environment variable BOT_TOKEN is missing or empty!")
+# Create Flask app
+web_app = Flask(__name__)
 
-app = Flask(__name__)
+@web_app.route('/')
+def home():
+    return "Telegram Bot is running."
 
-# Initialize the Telegram bot application
-logging.info("Initializing the application...")
-application = Application.builder().token(my_secret).build()
+def run_flask():
+    web_app.run(host="0.0.0.0", port=8080)
 
-#Telegram command handlers
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("dailyupdate", daily_update))
-application.add_handler(CommandHandler("leave", leave))
-application.add_handler(CommandHandler("help", help_command))
-application.add_handler(CommandHandler("addtask", add_task))
-application.add_handler(CommandHandler("listtask", list_task))
-application.add_handler(CommandHandler("stats", stats))
-application.add_handler(CommandHandler("feedback", feedback))
+# Set up Telegram bot
+def run_bot():
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not TOKEN:
+        raise ValueError("TELEGRAM_BOT_TOKEN environment variable not set.")
 
-# Set up webhook route
-@app.route(f"/{my_secret}", methods=["POST"])
-def webhook():
-    try:
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        application.process_update(update)
-        return "OK", 200
-    except Exception as e:
-        logging.error(f"Error processing update: {e}")
-        return "Internal Server Error", 500
+    application = ApplicationBuilder().token(TOKEN).build()
 
-def main() -> None:
-    """Starting the bot using Webhooks."""
-    logging.info("Setting up webhook...")
-    application.bot.set_webhook(url=f"https://pv-bot-production.up.railway.app/{my_secret}")
+    # Add command handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("dailyupdate", daily_update))
+    application.add_handler(CommandHandler("leave", leave))
+    application.add_handler(CommandHandler("addtask", add_task))
+    application.add_handler(CommandHandler("listtask", list_task))
+    application.add_handler(CommandHandler("stats", stats))
+    application.add_handler(CommandHandler("feedback", feedback))
 
-    # Run Flask app
-    port = int(os.getenv("PORT", 8443)) 
-    app.run(host="0.0.0.0", port=port)
+    logging.info("Starting the Telegram bot...")
+    application.run_polling()
 
 if __name__ == "__main__":
-    logging.info("Starting bot...")
-    main()
+    # Run Flask in a separate thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
+
+    # Run the bot
+    run_bot()
