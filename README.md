@@ -5,7 +5,7 @@ The repository currently contains incorrect or outdated code. However, the bot i
 
 You can verify the bot's functionality by checking the live deployment.  
 
-🚀 **[Check the bot in action](#https://t.me/itsPvbot)**  
+🚀 **[Check the bot in action](https://t.me/itsPvbot)**  
 
 # PV-Bot
 
