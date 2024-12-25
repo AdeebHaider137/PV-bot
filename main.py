@@ -1,9 +1,10 @@
+from flask import Flask
+from threading import Thread
 import logging
 import os
-from telegram import Update
-from telegram.ext import (ApplicationBuilder, CommandHandler, ContextTypes)
+from telegram.ext import ApplicationBuilder, CommandHandler
 
-# Import command modules
+# Import your command handlers
 from commands.add_task import add_task
 from commands.daily_update import daily_update
 from commands.feedback import feedback
@@ -19,22 +20,22 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Log the error and send a message to the user."""
-    logging.error(msg="Exception while handling an update:", exc_info=context.error)
-    if update and update.effective_user:
-        await update.effective_message.reply_text(
-            "An unexpected error occurred. Please try again later."
-        )
+# Create Flask app
+web_app = Flask(__name__)
 
-if __name__ == "__main__":
-    # Load the bot token from environment variable
+@web_app.route('/')
+def home():
+    return "Telegram Bot is running."
+
+def run_flask():
+    web_app.run(host="0.0.0.0", port=8080)
+
+# Set up Telegram bot
+def run_bot():
     TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
     if not TOKEN:
         raise ValueError("TELEGRAM_BOT_TOKEN environment variable not set.")
 
-    # Initialize the bot application
     application = ApplicationBuilder().token(TOKEN).build()
 
     # Add command handlers
@@ -47,9 +48,13 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("feedback", feedback))
 
-    # Add error handler
-    application.add_error_handler(error_handler)
+    logging.info("Starting the Telegram bot...")
+    application.run_polling()
+
+if __name__ == "__main__":
+    # Run Flask in a separate thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
 
     # Run the bot
-    logging.info("Starting the bot...")
-    application.run_polling()
+    run_bot()
