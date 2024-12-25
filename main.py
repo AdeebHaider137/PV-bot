@@ -11,6 +11,7 @@ from commands.leave import leave
 from commands.listtask import list_task
 from commands.start import start
 from commands.stats import stats
+from commands.hubstaff import hubstaff
 
 
 logging.basicConfig(
@@ -38,6 +39,7 @@ def run_bot():
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("hubstaff", hubstaff))
     application.add_handler(CommandHandler("dailyupdate", daily_update))
     application.add_handler(CommandHandler("leave", leave))
     application.add_handler(CommandHandler("addtask", add_task))
