@@ -10,6 +10,7 @@ from commands.add_task import add_task
 from commands.listtask import list_task
 from commands.stats import stats
 from commands.feedback import feedback
+from commands.help_command import help_command  # Import help_command
 
 # Set up logging
 logging.basicConfig(
@@ -32,13 +33,13 @@ application = Application.builder().token(my_secret).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("dailyupdate", daily_update))
 application.add_handler(CommandHandler("leave", leave))
-application.add_handler(CommandHandler("help", help_command))
+application.add_handler(CommandHandler("help", help_command))  # Fixed: Add help_command
 application.add_handler(CommandHandler("addtask", add_task))
 application.add_handler(CommandHandler("listtask", list_task))
 application.add_handler(CommandHandler("stats", stats))
 application.add_handler(CommandHandler("feedback", feedback))
 
-# Set up webhook route
+
 @app.route(f"/{my_secret}", methods=["POST"])
 async def webhook():
     try:
@@ -54,7 +55,7 @@ def main() -> None:
     logging.info("Setting up webhook...")
     application.bot.set_webhook(url=f"https://pv-bot-production.up.railway.app/{my_secret}")
 
-    # Run Flask app
+    
     port = int(os.getenv("PORT", 8443))
     app.run(host="0.0.0.0", port=port)
 
