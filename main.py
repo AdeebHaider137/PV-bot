@@ -1,64 +1,55 @@
-import os
 import logging
-from flask import Flask, request
+import os
 from telegram import Update
-from telegram.ext import Application, CommandHandler
-from commands.start import start
-from commands.daily_update import daily_update
-from commands.leave import leave
+from telegram.ext import (ApplicationBuilder, CommandHandler, ContextTypes)
+
+# Import command modules
 from commands.add_task import add_task
-from commands.listtask import list_task
-from commands.stats import stats
+from commands.daily_update import daily_update
 from commands.feedback import feedback
-from commands.help_command import help_command  # Import help_command
+from commands.help_command import help_command
+from commands.leave import leave
+from commands.listtask import list_task
+from commands.start import start
+from commands.stats import stats
 
-# Set up logging
+# Configure logging
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO)
-logger = logging.getLogger(__name__)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# Environment variables
-my_secret = os.getenv("BOT_TOKEN", "").strip()
-if not my_secret:
-    raise EnvironmentError("Environment variable BOT_TOKEN is missing or empty!")
-
-app = Flask(__name__)
-
-# Initialize the Telegram bot application
-logging.info("Initializing the application...")
-application = Application.builder().token(my_secret).build()
-
-# Telegram command handlers
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("dailyupdate", daily_update))
-application.add_handler(CommandHandler("leave", leave))
-application.add_handler(CommandHandler("help", help_command))  # Fixed: Add help_command
-application.add_handler(CommandHandler("addtask", add_task))
-application.add_handler(CommandHandler("listtask", list_task))
-application.add_handler(CommandHandler("stats", stats))
-application.add_handler(CommandHandler("feedback", feedback))
-
-
-@app.route(f"/{my_secret}", methods=["POST"])
-async def webhook():
-    try:
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        await application.process_update(update)  # Use await for async processing
-        return "OK", 200
-    except Exception as e:
-        logging.error(f"Error processing update: {e}")
-        return "Internal Server Error", 500
-
-def main() -> None:
-    """Starting the bot using Webhooks."""
-    logging.info("Setting up webhook...")
-    application.bot.set_webhook(url=f"https://pv-bot-production.up.railway.app/{my_secret}")
-
-    
-    port = int(os.getenv("PORT", 8443))
-    app.run(host="0.0.0.0", port=port)
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Log the error and send a message to the user."""
+    logging.error(msg="Exception while handling an update:", exc_info=context.error)
+    if update and update.effective_user:
+        await update.effective_message.reply_text(
+            "An unexpected error occurred. Please try again later."
+        )
 
 if __name__ == "__main__":
-    logging.info("Starting bot...")
-    main()
+    # Load the bot token from environment variable
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+    if not TOKEN:
+        raise ValueError("TELEGRAM_BOT_TOKEN environment variable not set.")
+
+    # Initialize the bot application
+    application = ApplicationBuilder().token(TOKEN).build()
+
+    # Add command handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("dailyupdate", daily_update))
+    application.add_handler(CommandHandler("leave", leave))
+    application.add_handler(CommandHandler("addtask", add_task))
+    application.add_handler(CommandHandler("listtask", list_task))
+    application.add_handler(CommandHandler("stats", stats))
+    application.add_handler(CommandHandler("feedback", feedback))
+
+    # Add error handler
+    application.add_error_handler(error_handler)
+
+    # Run the bot
+    logging.info("Starting the bot...")
+    application.run_polling()
