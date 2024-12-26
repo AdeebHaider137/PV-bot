@@ -6,6 +6,7 @@ async def help_command(update: Update,
     help_text = """
     ➮ /start - Displays the start message.
     ➮ /dailyupdate - Submit your daily update.
+    ➮ /hubstaff - To link Telegram with Hubstaff.
     ➮ /leave - Mark yourself as on leave.
     ➮ /help - Display this help message.
     ➮ /addtask - Add new task on hubstaff.
