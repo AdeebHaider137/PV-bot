@@ -8,7 +8,7 @@ from commands.daily_update import daily_update
 from commands.feedback import feedback
 from commands.help_command import help_command
 from commands.leave import leave
-from commands.listtask import list_task
+from commands.listtask import list_tasks
 from commands.start import start
 from commands.stats import stats
 from commands.hubstaff import hubstaff
@@ -43,7 +43,7 @@ def run_bot():
     application.add_handler(CommandHandler("dailyupdate", daily_update))
     application.add_handler(CommandHandler("leave", leave))
     application.add_handler(CommandHandler("addtask", add_task))
-    application.add_handler(CommandHandler("listtask", list_task))
+    application.add_handler(CommandHandler("listtask", list_tasks))
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("feedback", feedback))
 
