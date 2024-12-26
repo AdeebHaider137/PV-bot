@@ -4,6 +4,7 @@ from telegram.ext import ContextTypes
 async def help_command(update: Update,
                        context: ContextTypes.DEFAULT_TYPE) -> None:
     help_text = """
+    "Note: Hubstaff Task Database integration is currently under development."
     ➮ /start - Displays the start message.
     ➮ /dailyupdate - Submit your daily update.
     ➮ /hubstaff - To link Telegram with Hubstaff.

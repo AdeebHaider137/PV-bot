@@ -1,56 +1,47 @@
 import json
+import os
 import aiohttp
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters
 
-# In-memory storage for demonstration purposes (replace with a database for production)
-user_tokens = {}
+# Temporary in-memory storage for demonstration
+user_hubstaff_emails = {}  # {telegram_user_id: hubstaff_email}
+HUBSTAFF_ACCESS_TOKEN = os.getenv("HUBSTAFF_ACCESS_TOKEN")
+headers = {"Authorization": f"Bearer {HUBSTAFF_ACCESS_TOKEN}"}
 
 async def hubstaff(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start the process to link the user's Hubstaff account."""
+    """Prompt the user to link their Hubstaff account."""
     await update.message.reply_text(
-        "Please provide your Hubstaff API token to link your account. You can find it in your Hubstaff account settings."
+        "Please provide your Hubstaff email to link your account."
     )
-    # Set a context flag to expect the user's API token
-    context.user_data['awaiting_hubstaff_token'] = True
+    context.user_data['awaiting_hubstaff_email'] = True
 
-async def save_hubstaff_token(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Validate and save the Hubstaff API token provided by the user."""
-    if context.user_data.get('awaiting_hubstaff_token', False):
-        # Get the token from the user's message
-        token = update.message.text.strip()
+async def verify_and_link_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Verify the user's email and link them to their Hubstaff account."""
+    if context.user_data.get('awaiting_hubstaff_email', False):
+        email = update.message.text.strip()
 
-        # Attempt to validate the token with the Hubstaff API
-        headers = {"Authorization": f"Bearer {token}"}
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get("https://api.hubstaff.com/v2/users/me", headers=headers) as response:
+                # Fetch the authenticated user's information
+                headers = {"Authorization": f"Bearer {HUBSTAFF_ACCESS_TOKEN}"}
+                async with session.get("https://api.hubstaff.com/v2/users", headers=headers) as response:
                     if response.status == 200:
-                        # Token is valid
-                        user_data = await response.json()
-                        user_id = update.effective_user.id
-                        user_tokens[user_id] = token  # Save token (replace with secure storage in production)
-                        context.user_data['awaiting_hubstaff_token'] = False
-                        await update.message.reply_text(
-                            f"Your Hubstaff account has been linked successfully! Welcome, {user_data['name']}."
-                        )
+                        users = await response.json()
+
+                        # Check if the provided email exists in the user list
+                        user = next((u for u in users['users'] if u['email'] == email), None)
+                        if user:
+                            # Save email and link the user
+                            user_hubstaff_emails[update.effective_user.id] = email
+                            context.user_data['awaiting_hubstaff_email'] = False
+                            await update.message.reply_text("Your account has been linked successfully!")
+                        else:
+                            await update.message.reply_text("Email not found in Hubstaff. Please check and try again.")
                     else:
-                        # Handle invalid token
-                        error_message = await response.text()
-                        await update.message.reply_text(
-                            f"Failed to link your Hubstaff account. Please check your token and try again. ({response.status})"
-                        )
+                        await update.message.reply_text("Failed to connect to Hubstaff. Please try again later.")
             except aiohttp.ClientError as e:
-                # Handle connection errors
-                await update.message.reply_text(
-                    "There was an error connecting to the Hubstaff API. Please try again later."
-                )
+                await update.message.reply_text("An error occurred while connecting to Hubstaff. Please try again later.")
     else:
-        await update.message.reply_text(
-            "Please use /hubstaff to start linking your account first."
-        )
-
-# Handlers
-hubstaff_handler = CommandHandler("hubstaff", hubstaff)
-save_token_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, save_hubstaff_token)
-
+        await update.message.reply_text("Please use /hubstaff to link your account first.")
+verify_user_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, verify_and_link_user)
